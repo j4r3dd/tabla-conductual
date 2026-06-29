@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tabla">
+<meta name="theme-color" content="#0e0f13">
+<title>Tabla Conductual</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' rx='40' fill='%23121420'/%3E%3Ctext x='50%25' y='54%25' font-size='90' text-anchor='middle' dominant-baseline='middle' font-family='-apple-system,sans-serif' fill='%237aa2f7'%3E%E2%9C%8D%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0e0f13; --bg2:#15171f; --card:#191c26; --card2:#1f2230;
+    --line:#262a38; --txt:#e7e9f0; --muted:#9aa0b4; --muted2:#6c7283;
+    --accent:#7aa2f7; --accent-soft:#2a3552;
+    --green:#7ad19a; --amber:#e2c08d; --rose:#e08d9a; --violet:#b58df0;
+    --a:#7aa2f7; --b:#e08d9a; --c:#e2c08d; --d:#7ad19a; --e:#b58df0;
+    --radius:16px;
+    --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;}
+  body{padding-bottom:calc(96px + var(--safe-bottom));}
+  a{color:var(--accent);}
+
+  /* Header */
+  header{position:sticky;top:0;z-index:40;background:rgba(14,15,19,.86);
+    backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);
+    padding:calc(10px + var(--safe-top)) 16px 10px;border-bottom:1px solid var(--line);}
+  .h-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .h-title{font-size:19px;font-weight:700;letter-spacing:.2px;}
+  .h-title span{color:var(--accent);}
+  .icon-btn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--txt);
+    width:40px;height:40px;border-radius:12px;font-size:18px;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;flex:0 0 auto;}
+  .icon-btn:active{background:var(--card2);transform:scale(.96);}
+
+  /* Date strip */
+  .datebar{display:flex;align-items:center;gap:8px;margin-top:10px;}
+  .datebar .nav{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--txt);
+    width:38px;height:38px;border-radius:11px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .datebar .nav:active{background:var(--card2);}
+  .date-center{flex:1;text-align:center;}
+  .date-main{font-size:15px;font-weight:600;text-transform:capitalize;}
+  .date-sub{font-size:12px;color:var(--muted2);margin-top:1px;}
+  .today-pill{display:inline-block;margin-top:3px;font-size:11px;color:var(--accent);
+    background:var(--accent-soft);padding:1px 8px;border-radius:20px;}
+  .date-center input[type=date]{position:absolute;opacity:0;pointer-events:none;width:0;height:0;}
+
+  main{padding:14px 14px 0;max-width:720px;margin:0 auto;}
+
+  /* Empty state */
+  .empty{text-align:center;color:var(--muted2);padding:54px 20px;}
+  .empty .big{font-size:40px;margin-bottom:10px;}
+  .empty p{margin:6px 0;font-size:14px;}
+
+  /* Entry card */
+  .entry{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    margin-bottom:14px;overflow:hidden;}
+  .entry-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;}
+  .entry-time{font-size:12px;color:var(--muted2);font-variant-numeric:tabular-nums;flex:0 0 auto;}
+  .entry-emos{display:flex;gap:6px;flex-wrap:wrap;flex:1;}
+  .chip{font-size:11px;padding:2px 9px;border-radius:20px;background:var(--card2);color:var(--muted);border:1px solid var(--line);}
+  .chip.func{color:var(--amber);border-color:#3a3322;background:#241f15;}
+  .entry-summary{padding:0 14px 12px;font-size:14px;color:var(--muted);}
+  .entry.collapsed .entry-body{display:none;}
+  .caret{color:var(--muted2);font-size:13px;transition:transform .15s;flex:0 0 auto;}
+  .entry:not(.collapsed) .caret{transform:rotate(90deg);}
+
+  .entry-body{padding:2px 14px 14px;border-top:1px solid var(--line);}
+  .col{margin-top:14px;}
+  .col-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+    letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;}
+  .tag{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;color:#0e0f13;flex:0 0 auto;}
+  .tag.A{background:var(--a);} .tag.B{background:var(--b);} .tag.C{background:var(--c);}
+  .tag.D{background:var(--d);} .tag.E{background:var(--e);}
+  .col-label .lab-txt{color:var(--muted);}
+  .col-val{font-size:15px;white-space:pre-wrap;word-break:break-word;}
+  .col-val.empty-val{color:var(--muted2);font-style:italic;}
+  .sub{margin-top:6px;}
+  .sub .k{font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.3px;}
+  .belief{background:var(--card2);border-left:3px solid var(--b);padding:8px 11px;border-radius:8px;margin-top:4px;font-size:15px;white-space:pre-wrap;}
+  .win{margin-top:14px;background:#15201a;border:1px solid #234231;border-radius:10px;padding:10px 12px;}
+  .win .k{font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:.3px;font-weight:700;}
+  .win .v{font-size:14px;margin-top:3px;white-space:pre-wrap;}
+  .entry-actions{display:flex;gap:10px;margin-top:16px;}
+  .entry-actions button{flex:1;appearance:none;border:1px solid var(--line);background:var(--card2);
+    color:var(--txt);padding:10px;border-radius:11px;font-size:14px;cursor:pointer;}
+  .entry-actions button:active{transform:scale(.98);}
+  .entry-actions .del{color:var(--rose);border-color:#3a2730;}
+
+  /* FAB */
+  .fab{position:fixed;right:18px;bottom:calc(20px + var(--safe-bottom));z-index:45;
+    width:60px;height:60px;border-radius:30px;border:none;background:var(--accent);
+    color:#0e0f13;font-size:30px;font-weight:600;box-shadow:0 8px 24px rgba(122,162,247,.4);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .fab:active{transform:scale(.93);}
+
+  /* Modal sheet */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .scrim.open{opacity:1;pointer-events:auto;}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:55;background:var(--bg2);
+    border-radius:22px 22px 0 0;max-height:calc(100vh - var(--safe-top) - 18px);display:flex;flex-direction:column;
+    transform:translateY(100%);transition:transform .26s cubic-bezier(.22,1,.36,1);
+    box-shadow:0 -10px 40px rgba(0,0,0,.5);}
+  .sheet.open{transform:translateY(0);}
+  .sheet-grip{width:38px;height:5px;border-radius:3px;background:var(--line);margin:calc(9px + var(--safe-top)) auto 4px;flex:0 0 auto;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 10px;border-bottom:1px solid var(--line);flex:0 0 auto;}
+  .sheet-head h2{font-size:17px;margin:0;font-weight:700;}
+  .sheet-head .txt-btn{appearance:none;background:none;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px;}
+  .sheet-head .txt-btn.save{font-weight:700;}
+  .sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 16px calc(28px + var(--safe-bottom));}
+
+  .field{margin-top:16px;}
+  .field > label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;}
+  .field .help{font-size:12px;color:var(--muted2);margin:-2px 0 7px;line-height:1.35;}
+  .field .badge{display:inline-flex;width:20px;height:20px;border-radius:6px;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;color:#0e0f13;margin-right:7px;vertical-align:-2px;}
+  .badge.A{background:var(--a);} .badge.B{background:var(--b);} .badge.C{background:var(--c);}
+  .badge.D{background:var(--d);} .badge.E{background:var(--e);}
+  textarea,input[type=text],input[type=time]{width:100%;background:var(--card);border:1px solid var(--line);
+    color:var(--txt);border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit;resize:vertical;}
+  textarea:focus,input:focus{outline:none;border-color:var(--accent);}
+  textarea{min-height:64px;line-height:1.4;}
+
+  .emo-input-row{display:flex;gap:8px;}
+  .emo-input-row input{flex:1;}
+  .emo-input-row button{flex:0 0 auto;width:46px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--accent);font-size:22px;cursor:pointer;}
+  .emo-suggest{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px;}
+  .emo-suggest button, .emo-tag{font-size:13px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;}
+  .emo-tag{background:var(--accent-soft);color:#cdd9ff;border-color:#33406b;display:inline-flex;align-items:center;gap:6px;}
+  .emo-tag .x{font-size:15px;line-height:1;opacity:.8;}
+  .emo-chosen{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px;}
+
+  .belief-frame{font-size:13px;color:var(--muted2);margin-bottom:6px;}
+  .belief-frame b{color:var(--b);}
+
+  .func-opts{display:flex;flex-direction:column;gap:8px;}
+  .func-opt{display:flex;gap:11px;align-items:flex-start;padding:11px 12px;border:1px solid var(--line);
+    border-radius:12px;background:var(--card);cursor:pointer;}
+  .func-opt.sel{border-color:var(--amber);background:#221f16;}
+  .func-opt .r{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted2);flex:0 0 auto;margin-top:1px;position:relative;}
+  .func-opt.sel .r{border-color:var(--amber);}
+  .func-opt.sel .r::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--amber);}
+  .func-opt .ft{font-size:14px;font-weight:600;}
+  .func-opt .fd{font-size:12px;color:var(--muted2);margin-top:2px;}
+
+  .dispute-q{font-size:12px;color:var(--muted2);background:var(--card);border:1px dashed var(--line);
+    border-radius:10px;padding:9px 11px;margin-bottom:8px;line-height:1.45;}
+  .dispute-q b{color:var(--green);}
+
+  .divider{height:1px;background:var(--line);margin:22px 0 4px;}
+  .section-tip{font-size:12px;color:var(--accent);background:var(--accent-soft);
+    padding:8px 11px;border-radius:10px;margin-top:6px;line-height:1.4;}
+
+  /* Settings sheet content */
+  .set-row{display:flex;gap:12px;margin-top:14px;}
+  .set-row button{flex:1;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:15px;cursor:pointer;}
+  .set-info{font-size:13px;color:var(--muted2);margin-top:18px;line-height:1.55;}
+  .set-info b{color:var(--txt);}
+  .danger{color:var(--rose)!important;border-color:#3a2730!important;}
+  .count-line{font-size:13px;color:var(--muted);margin-top:8px;}
+
+  .toast{position:fixed;left:50%;bottom:calc(96px + var(--safe-bottom));transform:translateX(-50%) translateY(20px);
+    background:#222634;color:var(--txt);padding:11px 18px;border-radius:12px;font-size:14px;z-index:80;
+    opacity:0;pointer-events:none;transition:all .25s;border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,.4);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-row">
+    <div class="h-title">Tabla <span>Conductual</span></div>
+    <div style="display:flex;gap:8px;">
+      <button class="icon-btn" id="btnShareDay" aria-label="Compartir día">⇪</button>
+      <button class="icon-btn" id="btnSettings" aria-label="Ajustes">⚙</button>
+    </div>
+  </div>
+  <div class="datebar">
+    <button class="nav" id="prevDay" aria-label="Día anterior">‹</button>
+    <div class="date-center" id="dateCenter">
+      <div class="date-main" id="dateMain">—</div>
+      <div class="date-sub" id="dateSub"></div>
+      <input type="date" id="datePicker">
+    </div>
+    <button class="nav" id="nextDay" aria-label="Día siguiente">›</button>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<button class="fab" id="fab" aria-label="Nueva entrada">＋</button>
+
+<!-- Entry editor sheet -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-head">
+    <button class="txt-btn" id="cancelEntry">Cancelar</button>
+    <h2 id="sheetTitle">Nueva entrada</h2>
+    <button class="txt-btn save" id="saveEntry">Guardar</button>
+  </div>
+  <div class="sheet-body" id="sheetBody">
+
+    <div class="field">
+      <label>Hora</label>
+      <input type="time" id="fTime">
+    </div>
+
+    <div class="field">
+      <label><span class="badge A">A</span>Lo que pasó</label>
+      <div class="help">El hecho concreto y objetivo, sin interpretación. Ej: «Mi abuelo comentó mi partido de tenis.»</div>
+      <textarea id="fA" placeholder="El hecho, tal cual ocurrió…"></textarea>
+    </div>
+
+    <div class="field">
+      <label><span class="badge B">B</span>Lo que pensé / sentí</label>
+      <div class="help">Primero la emoción, luego el pensamiento automático.</div>
+      <div class="sub" style="margin-top:2px">
+        <div class="k" style="font-size:12px;color:var(--muted2);margin-bottom:6px">Emoción(es)</div>
+        <div class="emo-chosen" id="emoChosen"></div>
+        <div class="emo-input-row">
+          <input type="text" id="emoInput" placeholder="Escribe una emoción…">
+          <button id="emoAdd" aria-label="Agregar emoción">＋</button>
+        </div>
+        <div class="emo-suggest" id="emoSuggest"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Pensamiento automático</label>
+      <div class="belief-frame">No es describir el hecho, es lo que ese hecho significa <b>sobre ti</b>. Completa la frase:</div>
+      <div class="dispute-q" style="margin-bottom:8px">«…y eso significa que yo soy <b>______</b>.»</div>
+      <textarea id="fBthought" placeholder="…y eso significa que yo soy…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Función del pensamiento</label>
+      <div class="help">¿Qué estás regulando realmente? Cada conducta cumple una de estas.</div>
+      <div class="func-opts" id="funcOpts">
+        <div class="func-opt" data-func="Atención"><div class="r"></div><div><div class="ft">Atención</div><div class="fd">Buscar conexión, ser visto, validación.</div></div></div>
+        <div class="func-opt" data-func="Evitación / Escape"><div class="r"></div><div><div class="ft">Evitación / Escape</div><div class="fd">Alejarte de algo incómodo o aversivo.</div></div></div>
+        <div class="func-opt" data-func="Acceso a tangibles"><div class="r"></div><div><div class="ft">Acceso a tangibles / experiencias</div><div class="fd">Conseguir algo concreto o una experiencia.</div></div></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label><span class="badge C">C</span>Lo que hice</label>
+      <div class="help">La conducta concreta que siguió.</div>
+      <textarea id="fC" placeholder="Lo que hiciste a continuación…"></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label><span class="badge D">D</span>Disputa</label>
+      <div class="help">Cuestiona el pensamiento automático.</div>
+      <div class="dispute-q">
+        ¿Qué <b>evidencia real</b> tengo de esto?<br>
+        ¿Es un <b>hecho</b> o una <b>interpretación</b>?<br>
+        ¿Le diría esto a <b>alguien más</b> en mi situación?<br>
+        ¿Esto dice algo de mi <b>valor</b>, o solo de la <b>situación</b>?
+      </div>
+      <textarea id="fD" placeholder="Tu respuesta a esas preguntas…"></textarea>
+    </div>
+
+    <div class="field">
+      <label><span class="badge E">E</span>Auto instrucción</label>
+      <div class="help">La frase que te dices en lugar del pensamiento automático. No para que desaparezca, sino para reorientarte cuando vuelva.</div>
+      <textarea id="fE" placeholder="«Cuando esto vuelva, me digo…»"></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>✔ Avance (opcional)</label>
+      <div class="help">Tu cerebro filtra lo que funciona y solo registra lo que falla. ¿Hubo algo en tu C que funcionó mejor que antes?</div>
+      <textarea id="fWin" placeholder="Algo, por pequeño que sea, que salió mejor…"></textarea>
+    </div>
+
+  </div>
+</div>
+
+<!-- Settings sheet -->
+<div class="scrim" id="scrimSet"></div>
+<div class="sheet" id="sheetSet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-head">
+    <button class="txt-btn" id="closeSet">Listo</button>
+    <h2>Ajustes y respaldo</h2>
+    <span style="width:48px"></span>
+  </div>
+  <div class="sheet-body">
+    <div class="count-line" id="statLine"></div>
+    <div class="set-row">
+      <button id="btnShareAll">⇪ Compartir todo (texto)</button>
+    </div>
+    <div class="set-row">
+      <button id="btnExport">⬇ Exportar respaldo</button>
+      <button id="btnImport">⬆ Importar</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+    <div class="set-info">
+      <b>Tus datos viven solo en este iPhone</b>, dentro de Safari. Nada se sube a internet.
+      <br><br>
+      Para no perderlos si cambias de teléfono o borras Safari, usa <b>Exportar respaldo</b> de vez en cuando: se descarga un archivo que luego puedes volver a cargar con <b>Importar</b>.
+      <br><br>
+      <b>Instalar como app:</b> en Safari toca el botón Compartir → «Agregar a inicio». Se abrirá en pantalla completa con su propio ícono.
+    </div>
+    <div class="divider"></div>
+    <div class="set-row">
+      <button class="danger" id="btnWipe">Borrar todos los datos</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  const STORE_KEY = "tablaConductual.v1";
+  const DAYS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const MONTHS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const EMO_SUGGEST = ["Tristeza","Ansiedad","Frustración","Enojo","Vergüenza","Culpa","Miedo","Soledad","Inseguridad","Celos","Decepción","Calma","Alivio","Orgullo"];
+
+  // ---- State ----
+  let data = load();          // { entries: [ ... ] }
+  let current = new Date();   // selected day
+  let editingId = null;       // id being edited or null for new
+  let chosenEmos = [];
+  let chosenFunc = "";
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(raw){ const p = JSON.parse(raw); if(p && Array.isArray(p.entries)) return p; }
+    }catch(e){}
+    return { entries: [] };
+  }
+  function save(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+    catch(e){ toast("No se pudo guardar (almacenamiento lleno)"); }
+  }
+
+  // ---- Date helpers ----
+  function dateKey(d){
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function isSameDay(a,b){ return dateKey(a)===dateKey(b); }
+  function fmtMain(d){
+    return DAYS[d.getDay()]+", "+d.getDate()+" de "+MONTHS[d.getMonth()];
+  }
+
+  // ---- Render list ----
+  function render(){
+    const main = document.getElementById("list");
+    const key = dateKey(current);
+    const today = new Date();
+    document.getElementById("dateMain").textContent = fmtMain(current);
+    document.getElementById("dateSub").innerHTML = isSameDay(current,today)
+      ? '<span class="today-pill">Hoy</span>'
+      : current.getFullYear();
+
+    const items = data.entries
+      .filter(e => e.date === key)
+      .sort((a,b) => (a.time||"").localeCompare(b.time||"") || a.id - b.id);
+
+    if(items.length === 0){
+      main.innerHTML =
+        '<div class="empty"><div class="big">✍️</div>'+
+        '<p><b>Sin entradas este día.</b></p>'+
+        '<p>Toca el botón ＋ para registrar lo que pasó.</p></div>';
+      return;
+    }
+
+    main.innerHTML = items.map(renderCard).join("");
+    // wire each card
+    items.forEach(it=>{
+      const card = document.getElementById("card-"+it.id);
+      card.querySelector(".entry-head").addEventListener("click", ()=> card.classList.toggle("collapsed"));
+      const sh = card.querySelector(".js-share"); if(sh) sh.addEventListener("click", e=>{e.stopPropagation();shareEntry(it.id);});
+      const ed = card.querySelector(".js-edit"); if(ed) ed.addEventListener("click", e=>{e.stopPropagation();openEditor(it.id);});
+      const dl = card.querySelector(".js-del"); if(dl) dl.addEventListener("click", e=>{e.stopPropagation();delEntry(it.id);});
+    });
+  }
+
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+  function val(s, ph){ return s && s.trim() ? esc(s) : '<span class="empty-val">'+ph+'</span>'; }
+
+  function renderCard(e){
+    const emos = (e.emotions||[]).map(x=>'<span class="chip">'+esc(x)+'</span>').join("");
+    const func = e.func ? '<span class="chip func">'+esc(e.func)+'</span>' : "";
+    const summary = (e.a && e.a.trim()) ? esc(e.a) : '<span class="empty-val">(sin descripción)</span>';
+
+    let body = '<div class="entry-body">';
+    body += colBlock("A","Lo que pasó", val(e.a,"—"));
+    // B
+    body += '<div class="col"><div class="col-label"><span class="tag B">B</span><span class="lab-txt">Lo que pensé / sentí</span></div>';
+    if((e.emotions||[]).length){ body += '<div class="entry-emos" style="margin-bottom:6px">'+ (e.emotions||[]).map(x=>'<span class="chip">'+esc(x)+'</span>').join("") +'</div>'; }
+    if(e.thought && e.thought.trim()){ body += '<div class="sub"><div class="k">Pensamiento automático</div><div class="belief">'+esc(e.thought)+'</div></div>'; }
+    if(e.func){ body += '<div class="sub" style="margin-top:8px"><div class="k">Función</div><div class="col-val">'+esc(e.func)+'</div></div>'; }
+    if(!(e.emotions||[]).length && !(e.thought&&e.thought.trim()) && !e.func){ body += '<div class="col-val empty-val">—</div>'; }
+    body += '</div>';
+
+    body += colBlock("C","Lo que hice", val(e.c,"—"));
+    body += colBlock("D","Disputa", val(e.d,"—"));
+    body += colBlock("E","Auto instrucción", val(e.e,"—"));
+
+    if(e.win && e.win.trim()){
+      body += '<div class="win"><div class="k">✔ Avance</div><div class="v">'+esc(e.win)+'</div></div>';
+    }
+    body += '<div class="entry-actions"><button class="js-share">⇪ Compartir</button><button class="js-edit">Editar</button><button class="js-del del">Borrar</button></div>';
+    body += '</div>';
+
+    return ''+
+      '<div class="entry collapsed" id="card-'+e.id+'">'+
+        '<div class="entry-head">'+
+          '<span class="entry-time">'+esc(e.time||"--:--")+'</span>'+
+          '<span class="entry-emos">'+ (emos||func ? emos+func : '<span class="chip" style="opacity:.5">sin emoción</span>') +'</span>'+
+          '<span class="caret">›</span>'+
+        '</div>'+
+        '<div class="entry-summary">'+summary+'</div>'+
+        body+
+      '</div>';
+  }
+  function colBlock(letter,label,inner){
+    return '<div class="col"><div class="col-label"><span class="tag '+letter+'">'+letter+'</span><span class="lab-txt">'+label+'</span></div><div class="col-val">'+inner+'</div></div>';
+  }
+
+  // ---- Editor ----
+  function openEditor(id){
+    editingId = id || null;
+    const e = id ? data.entries.find(x=>x.id===id) : null;
+    document.getElementById("sheetTitle").textContent = id ? "Editar entrada" : "Nueva entrada";
+
+    if(e){
+      document.getElementById("fTime").value = e.time||"";
+      document.getElementById("fA").value = e.a||"";
+      document.getElementById("fBthought").value = e.thought||"";
+      document.getElementById("fC").value = e.c||"";
+      document.getElementById("fD").value = e.d||"";
+      document.getElementById("fE").value = e.e||"";
+      document.getElementById("fWin").value = e.win||"";
+      chosenEmos = (e.emotions||[]).slice();
+      chosenFunc = e.func||"";
+    }else{
+      const now = new Date();
+      document.getElementById("fTime").value = String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+      ["fA","fBthought","fC","fD","fE","fWin","emoInput"].forEach(id=>document.getElementById(id).value="");
+      chosenEmos = []; chosenFunc = "";
+    }
+    renderEmos(); renderFunc(); renderEmoSuggest();
+    openSheet("sheet","scrim");
+    document.getElementById("sheetBody").scrollTop = 0;
+  }
+
+  function renderEmos(){
+    document.getElementById("emoChosen").innerHTML = chosenEmos.map((x,i)=>
+      '<span class="emo-tag" data-i="'+i+'">'+esc(x)+' <span class="x">×</span></span>').join("");
+    document.querySelectorAll("#emoChosen .emo-tag").forEach(t=>{
+      t.addEventListener("click", ()=>{ chosenEmos.splice(+t.dataset.i,1); renderEmos(); renderEmoSuggest(); });
+    });
+  }
+  function renderEmoSuggest(){
+    const wrap = document.getElementById("emoSuggest");
+    wrap.innerHTML = EMO_SUGGEST.filter(x=>!chosenEmos.includes(x)).map(x=>'<button type="button">'+x+'</button>').join("");
+    wrap.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ addEmo(b.textContent); }));
+  }
+  function addEmo(text){
+    text=(text||"").trim(); if(!text) return;
+    if(!chosenEmos.includes(text)) chosenEmos.push(text);
+    document.getElementById("emoInput").value="";
+    renderEmos(); renderEmoSuggest();
+  }
+  function renderFunc(){
+    document.querySelectorAll("#funcOpts .func-opt").forEach(o=>{
+      o.classList.toggle("sel", o.dataset.func===chosenFunc);
+    });
+  }
+
+  function collect(){
+    return {
+      time: document.getElementById("fTime").value || "",
+      a: document.getElementById("fA").value.trim(),
+      emotions: chosenEmos.slice(),
+      thought: document.getElementById("fBthought").value.trim(),
+      func: chosenFunc,
+      c: document.getElementById("fC").value.trim(),
+      d: document.getElementById("fD").value.trim(),
+      e: document.getElementById("fE").value.trim(),
+      win: document.getElementById("fWin").value.trim()
+    };
+  }
+  function saveEntry(){
+    const v = collect();
+    const hasContent = v.a||v.thought||v.c||v.d||v.e||v.win||v.emotions.length||v.func;
+    if(!hasContent){ toast("Escribe algo antes de guardar"); return; }
+    if(editingId){
+      const e = data.entries.find(x=>x.id===editingId);
+      Object.assign(e, v);
+    }else{
+      data.entries.push(Object.assign({ id: Date.now()+Math.floor(Math.random()*1000), date: dateKey(current) }, v));
+    }
+    save(); closeSheet("sheet","scrim"); render();
+    toast(editingId ? "Entrada actualizada" : "Entrada guardada");
+  }
+  function delEntry(id){
+    if(!confirm("¿Borrar esta entrada? No se puede deshacer.")) return;
+    data.entries = data.entries.filter(x=>x.id!==id);
+    save(); render(); toast("Entrada borrada");
+  }
+
+  // ---- Sheets ----
+  function openSheet(s,sc){ document.getElementById(sc).classList.add("open"); document.getElementById(s).classList.add("open"); }
+  function closeSheet(s,sc){ document.getElementById(sc).classList.remove("open"); document.getElementById(s).classList.remove("open"); }
+
+  // ---- Compartir / Exportar como texto ----
+  function fmtDateLong(key){
+    const p = key.split("-").map(Number);
+    const dt = new Date(p[0], p[1]-1, p[2]);
+    const dn = DAYS[dt.getDay()];
+    return dn.charAt(0).toUpperCase()+dn.slice(1)+", "+p[2]+" de "+MONTHS[p[1]-1]+" de "+p[0];
+  }
+  function entryToText(e){
+    const L=[];
+    L.push("Hora: "+(e.time||"--:--"));
+    L.push("");
+    L.push("A - Lo que paso:");
+    L.push(e.a&&e.a.trim()?e.a.trim():"-");
+    L.push("");
+    L.push("B - Lo que pense / senti:");
+    L.push("Emocion: "+((e.emotions&&e.emotions.length)?e.emotions.join(", "):"-"));
+    L.push("Pensamiento automatico: "+(e.thought&&e.thought.trim()?e.thought.trim():"-"));
+    L.push("Funcion del pensamiento: "+(e.func?e.func:"-"));
+    L.push("");
+    L.push("C - Lo que hice:");
+    L.push(e.c&&e.c.trim()?e.c.trim():"-");
+    L.push("");
+    L.push("D - Disputa:");
+    L.push(e.d&&e.d.trim()?e.d.trim():"-");
+    L.push("");
+    L.push("E - Auto instruccion:");
+    L.push(e.e&&e.e.trim()?e.e.trim():"-");
+    if(e.win&&e.win.trim()){ L.push(""); L.push("Avance:"); L.push(e.win.trim()); }
+    return L.join("\n");
+  }
+  function dayToText(key){
+    const items=data.entries.filter(e=>e.date===key).sort((a,b)=>(a.time||"").localeCompare(b.time||"")||a.id-b.id);
+    const header="TABLA CONDUCTUAL\n"+fmtDateLong(key)+"\n"+items.length+" entrada"+(items.length===1?"":"s");
+    const sep="\n\n--------------------\n\n";
+    return header+sep+items.map(entryToText).join(sep);
+  }
+  async function shareText(text,title){
+    if(navigator.share){
+      try{ await navigator.share({title:title||"Tabla Conductual",text:text}); return; }
+      catch(err){ if(err&&err.name==="AbortError") return; }
+    }
+    copyText(text);
+  }
+  function copyText(text){
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(()=>toast("Copiado al portapapeles"),()=>fallbackCopy(text));
+    }else{ fallbackCopy(text); }
+  }
+  function fallbackCopy(text){
+    const ta=document.createElement("textarea");
+    ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand("copy"); toast("Copiado al portapapeles"); }catch(e){ toast("No se pudo copiar"); }
+    ta.remove();
+  }
+  function shareEntry(id){
+    const e=data.entries.find(x=>x.id===id); if(!e) return;
+    shareText("Tabla conductual - "+fmtDateLong(e.date)+"\n\n"+entryToText(e), "Entrada - "+fmtDateLong(e.date));
+  }
+  function shareDay(){
+    const key=dateKey(current);
+    if(data.entries.filter(e=>e.date===key).length===0){ toast("No hay entradas este dia"); return; }
+    shareText(dayToText(key), "Tabla conductual - "+fmtDateLong(key));
+  }
+  function shareAll(){
+    if(data.entries.length===0){ toast("No hay entradas todavia"); return; }
+    const keys=Array.from(new Set(data.entries.map(e=>e.date))).sort();
+    shareText("TABLA CONDUCTUAL - TODAS LAS ENTRADAS\n("+data.entries.length+" entradas)\n\n"+keys.map(dayToText).join("\n\n====================\n\n"), "Tabla conductual - todo");
+  }
+
+  // ---- Export / Import ----
+  function exportData(){
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "tabla-conductual-"+dateKey(new Date())+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+    toast("Respaldo descargado");
+  }
+  function importData(file){
+    const r = new FileReader();
+    r.onload = ()=>{
+      try{
+        const p = JSON.parse(r.result);
+        if(!p || !Array.isArray(p.entries)) throw 0;
+        if(!confirm("¿Reemplazar tus datos actuales con los del respaldo? ("+p.entries.length+" entradas)")) return;
+        data = p; save(); render(); toast("Respaldo importado");
+        updateStat();
+      }catch(e){ toast("Archivo no válido"); }
+    };
+    r.readAsText(file);
+  }
+  function updateStat(){
+    const n = data.entries.length;
+    const days = new Set(data.entries.map(e=>e.date)).size;
+    document.getElementById("statLine").textContent = n+" entrada"+(n===1?"":"s")+" en "+days+" día"+(days===1?"":"s")+".";
+  }
+
+  // ---- Toast ----
+  let toastT;
+  function toast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove("show"), 1900);
+  }
+
+  // ---- Wire up ----
+  document.getElementById("prevDay").addEventListener("click", ()=>{ current.setDate(current.getDate()-1); render(); });
+  document.getElementById("nextDay").addEventListener("click", ()=>{ current.setDate(current.getDate()+1); render(); });
+  const dp = document.getElementById("datePicker");
+  document.getElementById("dateCenter").addEventListener("click", ()=>{ try{dp.showPicker();}catch(e){dp.click();} });
+  dp.addEventListener("change", ()=>{ if(dp.value){ const [y,m,d]=dp.value.split("-").map(Number); current=new Date(y,m-1,d); render(); } });
+
+  document.getElementById("fab").addEventListener("click", ()=>openEditor(null));
+  document.getElementById("cancelEntry").addEventListener("click", ()=>closeSheet("sheet","scrim"));
+  document.getElementById("saveEntry").addEventListener("click", saveEntry);
+  document.getElementById("scrim").addEventListener("click", ()=>closeSheet("sheet","scrim"));
+
+  document.getElementById("emoAdd").addEventListener("click", ()=>addEmo(document.getElementById("emoInput").value));
+  document.getElementById("emoInput").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); addEmo(e.target.value); } });
+  document.querySelectorAll("#funcOpts .func-opt").forEach(o=>{
+    o.addEventListener("click", ()=>{ chosenFunc = (chosenFunc===o.dataset.func)?"":o.dataset.func; renderFunc(); });
+  });
+
+  document.getElementById("btnShareDay").addEventListener("click", shareDay);
+  document.getElementById("btnSettings").addEventListener("click", ()=>{ updateStat(); openSheet("sheetSet","scrimSet"); });
+  document.getElementById("closeSet").addEventListener("click", ()=>closeSheet("sheetSet","scrimSet"));
+  document.getElementById("scrimSet").addEventListener("click", ()=>closeSheet("sheetSet","scrimSet"));
+  document.getElementById("btnShareAll").addEventListener("click", shareAll);
+  document.getElementById("btnExport").addEventListener("click", exportData);
+  document.getElementById("btnImport").addEventListener("click", ()=>document.getElementById("importFile").click());
+  document.getElementById("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; });
+  document.getElementById("btnWipe").addEventListener("click", ()=>{
+    if(!confirm("¿Borrar TODAS las entradas de todos los días? Esto no se puede deshacer.")) return;
+    if(!confirm("¿Seguro? Última confirmación.")) return;
+    data = { entries: [] }; save(); render(); updateStat(); toast("Todo borrado");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
